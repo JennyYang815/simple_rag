@@ -1,3 +1,27 @@
 #Simple RAG
-A simple RAG system built from scratch for learning.
-Just for practice.XD
+
+一个用于学习 RAG 基本原理的小型项目（Just for practice.XD）
+
+## 当前进度
+
+- 已完成文本 Embedding
+- 已完成语义相似度计算
+- 已完成最相关文本检索
+
+## 当前效果
+
+对于一些问题能够正确检索到相关文本
+例如：对于“CPU为什么需要高速缓存？”这个问题，能够正确检索到 Cache 相关文本
+
+## 已知问题
+
+- 当前每次运行程序都会重新加载 Embedding 模型，启动速度较慢，效率较低
+- 当知识库中没有相关内容时，程序仍然会强制返回一条结果
+- 当前知识库只有手动编写的几条文本
+
+## 后续计划（优先级递减）
+
+- 支持 Top-K 检索
+- 增加相似度阈值
+- 支持 PDF 文档
+- 接入大语言模型生成回答

@@ -1,4 +1,4 @@
-#Simple RAG
+# Simple RAG
 
 一个用于学习 RAG 基本原理的小型项目（Just for practice.XD）
 

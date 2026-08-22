@@ -110,4 +110,31 @@ else:
         print(f"PDF 页码：第 {chunks[index]['page']} 页")
         print("内容：")
         print(chunks[index]["text"])
+        
+        context_parts = []
+
+    for index in valid_indices:
+        context_parts.append(
+            f"[第 {chunks[index]['page']} 页]\n"
+            f"{chunks[index]['text']}"
+        )
+
+    # 组织prompt
+    context = "\n\n".join(context_parts)
+
+    prompt = f"""
+你是一个文档问答助手。请仅根据下面提供的参考资料回答问题。
+如果参考资料中没有足够的信息，请回答“根据当前资料无法回答”，不要自己编造内容。
+    
+用户问题：
+{question}
+
+参考资料：
+{context}
+
+请回答：
+"""
+
+    print("\n===== 准备发送给大模型的 Prompt =====")
+    print(prompt)
 

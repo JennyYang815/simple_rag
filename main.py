@@ -1,36 +1,68 @@
 from sentence_transformers import SentenceTransformer
+from pypdf import PdfReader
 
 # 读取文件
-with open("data/knowledge.txt", "r", encoding="utf-8") as file:
-    text = file.read()
+def load_pdf(file_path):
+    reader = PdfReader(file_path)
 
-# 切分chunk    
-def split_text(text, chunk_size=300, overlap=50):
+    pages = []
+
+    for page_number, page in enumerate(reader.pages, start=1):
+        
+        # 第一页为无关内容，跳过
+        if page_number == 1:
+            continue
+        
+        text = page.extract_text()
+
+        if text:
+            pages.append({
+                "page": page_number,
+                "text": text
+            })
+
+    return pages
+
+pages = load_pdf("data/knowledge.pdf")
+
+# 切分chunk   
+def split_pages(pages, chunk_size=200, overlap=50):
     chunks = []
-    start = 0
 
-    while start < len(text):
-        end = start + chunk_size
+    for page in pages:
+        text = page["text"]
 
-        chunk = text[start:end].strip()
+        start = 0
 
-        if chunk:
-            chunks.append(chunk)
+        while start < len(text):
+            end = start + chunk_size
 
-        if end >= len(text):
-            break
+            chunk_text = text[start:end].strip()
 
-        start = end - overlap
+            if chunk_text:
+                chunks.append({
+                    "page": page["page"],
+                    "text": chunk_text
+                })
 
-    return chunks
+            if end >= len(text):
+                break
 
-documents = split_text(text)
+            start = end - overlap
 
-print(f"共切分成 {len(documents)} 个 Chunk：")
+    return chunks 
 
-for i, chunk in enumerate(documents, start=1):
-    print(f"\n--- Chunk {i} ---")
-    print(chunk)
+chunks = split_pages(
+    pages,
+    chunk_size=200,
+    overlap=50
+)
+
+print(f"PDF 共读取 {len(pages)} 页")
+print(f"共生成 {len(chunks)} 个 Chunk")
+
+# 提取chunk中的文字
+documents = [chunk["text"] for chunk in chunks]
 
 # 输入问题
 question = input("请输入你的问题：")
@@ -49,9 +81,9 @@ question_vector = model.encode(
     normalize_embeddings=True
 )
 
-scores = document_vectors @ question_vector     # 比较相似度
+scores = document_vectors @ question_vector     # 计算相似度
 
-top_k = 3
+top_k = 3   # Top-K   
 
 top_indices = scores.argsort()[::-1][:top_k]
 
@@ -75,4 +107,7 @@ else:
     for rank, index in enumerate(valid_indices, start=1):
         print(f"\n第 {rank} 名")
         print(f"相似度：{scores[index]:.4f}")
-        print(f"资料：{documents[index]}")
+        print(f"PDF 页码：第 {chunks[index]['page']} 页")
+        print("内容：")
+        print(chunks[index]["text"])
+

@@ -1,12 +1,13 @@
 from sentence_transformers import SentenceTransformer
 
-documents = [
-    "Cache 是位于 CPU 和主存之间的高速存储器。",
-    "RISC-V 是一种开源的精简指令集架构。",
-    "哈夫曼编码是一种变长编码方法。",
-    "虚拟内存可以让程序使用比物理内存更大的地址空间。",
-    "流水线可以提高处理器执行指令的吞吐率。"
-]
+with open("data/knowledge.txt", "r", encoding="utf-8") as file:
+    documents = [
+        line.strip()
+        for line in file
+        if line.strip()
+    ]
+    
+print(f"已加载 {len(documents)} 条知识")
 
 question = input("请输入你的问题：")
 

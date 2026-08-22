@@ -1,7 +1,34 @@
 from sentence_transformers import SentenceTransformer
 from pypdf import PdfReader
 
-# 读取文件
+import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# 读取.env文件
+load_dotenv()
+
+# 创建大模型客户端
+def generate_answer(prompt):
+    client = OpenAI(
+        api_key=os.getenv("DEEPSEEK_API_KEY"),
+        base_url="https://api.deepseek.com"
+    )
+
+    response = client.chat.completions.create(
+        model="deepseek-v4-flash",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
+    return response.choices[0].message.content
+
+# 读取pdf文件
 def load_pdf(file_path):
     reader = PdfReader(file_path)
 
@@ -87,7 +114,7 @@ top_k = 3   # Top-K
 
 top_indices = scores.argsort()[::-1][:top_k]
 
-threshold = 0.60    # 相似度阈值
+threshold = 0.54    # 相似度阈值
 
 # 输出
 print("\n你的问题是：", question)
@@ -137,4 +164,9 @@ else:
 
     print("\n===== 准备发送给大模型的 Prompt =====")
     print(prompt)
+    
+    answer = generate_answer(prompt)
+
+    print("\n===== RAG 最终回答 =====")
+    print(answer)
 

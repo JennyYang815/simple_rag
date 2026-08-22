@@ -24,14 +24,15 @@ question_vector = model.encode(
 
 scores = document_vectors @ question_vector
 
-best_index = scores.argmax()
+top_k = 3
+
+top_indices = scores.argsort()[::-1][:top_k]
 
 print("\n你的问题是：", question)
 
-print("\n所有资料的相似度：")
+print(f"\n最相关的前 {top_k} 条资料：")
 
-for i in range(len(documents)):
-    print(f"{scores[i]:.4f}  {documents[i]}")
-
-print("\n最相关的资料：")
-print(documents[best_index])
+for rank, index in enumerate(top_indices, start=1):
+    print(f"\n第 {rank} 名")
+    print(f"相似度：{scores[index]:.4f}")
+    print(f"资料：{documents[index]}")

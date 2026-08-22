@@ -28,11 +28,23 @@ top_k = 3
 
 top_indices = scores.argsort()[::-1][:top_k]
 
+threshold = 0.60
+
 print("\n你的问题是：", question)
 
-print(f"\n最相关的前 {top_k} 条资料：")
+valid_indices = []
 
-for rank, index in enumerate(top_indices, start=1):
-    print(f"\n第 {rank} 名")
-    print(f"相似度：{scores[index]:.4f}")
-    print(f"资料：{documents[index]}")
+for index in top_indices:
+    if scores[index] >= threshold:
+        valid_indices.append(index)
+
+if len(valid_indices) == 0:
+    print("\n没有找到足够相关的资料。")
+
+else:
+    print(f"\n找到 {len(valid_indices)} 条相关资料：")
+
+    for rank, index in enumerate(valid_indices, start=1):
+        print(f"\n第 {rank} 名")
+        print(f"相似度：{scores[index]:.4f}")
+        print(f"资料：{documents[index]}")

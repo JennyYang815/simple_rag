@@ -2,6 +2,7 @@ from loader import load_pdf
 from chunker import split_pages
 from retriever import Retriever
 from llm import generate_answer
+from prompt import build_prompt
 
 
 # 读取pdf文件
@@ -39,43 +40,22 @@ if len(results) == 0:
     print("\n没有找到足够相关的资料。")
 
 else:
-    # print(f"\n找到 {len(results)} 条相关资料：")
+    print(f"\n找到 {len(results)} 条相关资料：")
 
-    # for rank, result in enumerate(results, start=1):
-    #     print(f"\n===== 第 {rank} 名 =====")
-    #     print(f"相似度：{result['score']:.4f}")
-    #     print(f"PDF 页码：第 {result['page']} 页")
-    #     print("内容：")
-    #     print(result["text"])
+    for rank, result in enumerate(results, start=1):
+        print(f"\n===== 第 {rank} 名 =====")
+        print(f"相似度：{result['score']:.4f}")
+        print(f"PDF 页码：第 {result['page']} 页")
+        print("内容：")
+        print(result["text"])
     
-    # 构造context    
-    context_parts = []
-
-    for result in results:
-        context_parts.append(
-            f"[第 {result['page']} 页]\n"
-            f"{result['text']}"
-        )
-
-    context = "\n\n".join(context_parts)
-    
-    # 组织prompt
-    prompt = f"""
-你是一个文档问答助手。请仅根据下面提供的参考资料回答问题。
-如果参考资料中没有足够的信息，请回答“根据当前资料无法回答”，不要自己编造内容。
-    
-用户问题：
-{question}
-
-参考资料：
-{context}
-
-请回答：
-"""
+    # 组织Prompt
+    prompt = build_prompt(question, results)
 
     print("\n===== 准备发送给大模型的 Prompt =====")
     print(prompt)
     
+    # 调用大模型
     answer = generate_answer(prompt)
 
     print("\n===== RAG 最终回答 =====")

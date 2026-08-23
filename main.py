@@ -1,5 +1,6 @@
 from sentence_transformers import SentenceTransformer
-from pypdf import PdfReader
+from loader import load_pdf
+from chunker import split_pages
 
 import os
 
@@ -29,56 +30,12 @@ def generate_answer(prompt):
     return response.choices[0].message.content
 
 # 读取pdf文件
-def load_pdf(file_path):
-    reader = PdfReader(file_path)
-
-    pages = []
-
-    for page_number, page in enumerate(reader.pages, start=1):
-        
-        # 第一页为无关内容，跳过
-        if page_number == 1:
-            continue
-        
-        text = page.extract_text()
-
-        if text:
-            pages.append({
-                "page": page_number,
-                "text": text
-            })
-
-    return pages
-
-pages = load_pdf("data/knowledge.pdf")
+pages = load_pdf(
+    "data/knowledge.pdf",
+    skip_pages=[1]
+)
 
 # 切分chunk   
-def split_pages(pages, chunk_size=200, overlap=50):
-    chunks = []
-
-    for page in pages:
-        text = page["text"]
-
-        start = 0
-
-        while start < len(text):
-            end = start + chunk_size
-
-            chunk_text = text[start:end].strip()
-
-            if chunk_text:
-                chunks.append({
-                    "page": page["page"],
-                    "text": chunk_text
-                })
-
-            if end >= len(text):
-                break
-
-            start = end - overlap
-
-    return chunks 
-
 chunks = split_pages(
     pages,
     chunk_size=200,

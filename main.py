@@ -1,33 +1,8 @@
 from loader import load_pdf
 from chunker import split_pages
 from retriever import Retriever
+from llm import generate_answer
 
-import os
-
-from dotenv import load_dotenv
-from openai import OpenAI
-
-# 读取.env文件
-load_dotenv()
-
-# 创建大模型客户端
-def generate_answer(prompt):
-    client = OpenAI(
-        api_key=os.getenv("DEEPSEEK_API_KEY"),
-        base_url="https://api.deepseek.com"
-    )
-
-    response = client.chat.completions.create(
-        model="deepseek-v4-flash",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
-    )
-
-    return response.choices[0].message.content
 
 # 读取pdf文件
 pages = load_pdf(
@@ -45,17 +20,15 @@ chunks = split_pages(
 print(f"PDF 共读取 {len(pages)} 页")
 print(f"共生成 {len(chunks)} 个 Chunk")
 
-# 提取chunk中的文字
-documents = [chunk["text"] for chunk in chunks]
+# 输入问题
+question = input("请输入你的问题：")
 
+# 语义检索并筛选
 retriever = Retriever(
     chunks,
     top_k=3,
     threshold=0.54
 )
-
-# 输入问题
-question = input("请输入你的问题：")
 
 results = retriever.retrieve(question)
 
@@ -68,13 +41,14 @@ if len(results) == 0:
 else:
     # print(f"\n找到 {len(results)} 条相关资料：")
 
-    # for rank, index in enumerate(results, start=1):
-    #     print(f"\n第 {rank} 名")
-    #     print(f"相似度：{results[index]:.4f}")
-    #     print(f"PDF 页码：第 {chunks[index]['page']} 页")
+    # for rank, result in enumerate(results, start=1):
+    #     print(f"\n===== 第 {rank} 名 =====")
+    #     print(f"相似度：{result['score']:.4f}")
+    #     print(f"PDF 页码：第 {result['page']} 页")
     #     print("内容：")
-    #     print(chunks[index]["text"])
-        
+    #     print(result["text"])
+    
+    # 构造context    
     context_parts = []
 
     for result in results:
@@ -83,9 +57,9 @@ else:
             f"{result['text']}"
         )
 
-    # 组织prompt
     context = "\n\n".join(context_parts)
-
+    
+    # 组织prompt
     prompt = f"""
 你是一个文档问答助手。请仅根据下面提供的参考资料回答问题。
 如果参考资料中没有足够的信息，请回答“根据当前资料无法回答”，不要自己编造内容。

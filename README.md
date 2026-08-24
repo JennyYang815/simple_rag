@@ -1,7 +1,7 @@
 # Simple RAG
 
-一个用于学习 RAG 基本原理的小型项目（Just for practice.XD）
-本项目不直接使用 LangChain 等 RAG 框架封装，而是将 PDF 解析、文本切块、Embedding、语义检索、Prompt 构造和大语言模型调用等步骤逐步实现，以理解一个基础 RAG 系统的完整工作流程。
+一个从零实现的轻量级PDF RAG问答系统，用于学习 RAG 基本原理（Just for practice.XD）
+本项目不直接使用LangChain等RAG框架封装，而是将PDF解析、文本切块、Embedding、语义检索、Prompt构造和大语言模型调用等步骤逐步实现，并针对Retriever性能和Chunk参数进行了初步实验。
 
 
 ## 项目流程
@@ -9,164 +9,312 @@
 当前实现的基本流程如下：
 
 ```text
-PDF 文档
+PDF文档
    ↓
 文本提取
    ↓
-Chunk 文本切块
+Chunk文本切块
    ↓
-Embedding 向量化
+Embedding向量化
    ↓
 用户问题向量化
    ↓
 计算语义相似度
    ↓
-Top-K 检索
+Top-K检索
    ↓
 相似度阈值过滤
    ↓
-构造 Context + Prompt
+构造Context + Prompt
    ↓
 大语言模型
    ↓
-生成最终回答
+最终回答+来源页码
 ```
 
 ## 当前功能
 
 目前已经实现：
 
-* PDF 文本读取
-* PDF 页面信息保留
-* 固定长度文本切块（Chunk）
-* Chunk Overlap
-* 中文 Embedding
-* 语义相似度计算
-* Top-K 相关文本检索
-* 相似度阈值过滤
-* 检索结果页码溯源
-* RAG Context 构造
-* Prompt 构造
-* 调用大语言模型生成回答
-* 基础检索实验记录
+- PDF文本读取
+- PDF页码保留与来源溯源
+- 固定长度Chunk切分
+- Chunk Overlap
+- 中文Embedding
+- Top-K语义检索
+- 相似度阈值过滤
+- Prompt构造
+- DeepSeek API调用
+- 最终回答来源页码展示
+- 连续问答
+- Embedding模型本地优先加载
+- 文档Embedding本地缓存
+- Retriever自动评测
+- Chunk Size参数对比实验
+- RAG各阶段性能统计
+- 基础模块化工程结构
 
 当前使用的 Embedding 模型：
 
 ```text
 BAAI/bge-small-zh-v1.5
 ```
-
-## 示例
-
-测试问题：
+当前主要参数：
 
 ```text
-流水线提高的是延迟还是吞吐率？
-```
-
-系统首先从 PDF 中检索相关内容：
-
-```text
-PDF 页码：第 5 页
-
-流水线的主要作用是提高指令吞吐率，
-也就是单位时间内完成更多指令。
-它通常不会直接缩短单条指令从开始到结束的总延迟。
-```
-
-随后将检索结果作为 Context 提供给大语言模型，得到最终回答：
-
-```text
-根据参考资料，流水线的主要作用是提高指令吞吐率，
-也就是单位时间内完成更多指令；
-它通常不会直接缩短单条指令的总延迟。
-
-因此答案是：吞吐率。
+Chunk Size=200
+Overlap=50
+Top-K=3
+Threshold=0.54
 ```
 
 ## 项目结构
-
-当前项目结构：
 
 ```text
 simple_rag/
 │
 ├── data/
-│   └── knowledge.pdf       # 测试知识库
+│   └── knowledge.pdf
 │
-├── main.py                 # 当前 RAG 主程序
-├── experiments.md          # 实验记录
-├── README.md
+├── evaluation/
+│   └── test_questions.json
+│
+├── loader.py
+├── chunker.py
+├── retriever.py
+├── prompt.py
+├── llm.py
+├── config.py
+│
+├── main.py
+├── evaluate.py
+│
+├── experiments.md
+├── requirements.txt
+├── .env.example
 ├── .gitignore
-└── .env                    # API Key，本文件不会上传 GitHub
+└── README.md
 ```
 
-后续计划进一步拆分不同模块，提高代码可维护性。
-
-## 检索方法
-
-首先将 PDF 文本划分为多个 Chunk：
+各模块职责：
 
 ```text
-PDF
- ↓
-Chunk 1
-Chunk 2
-Chunk 3
-...
+loader.py
+→读取PDF并保留页码
+
+chunker.py
+→文本切块
+
+retriever.py
+→Embedding、Top-K检索、Threshold过滤和向量缓存
+
+prompt.py
+→构造RAG Prompt
+
+llm.py
+→调用大语言模型
+
+config.py
+→统一管理项目参数
+
+main.py
+→RAG主流程
+
+evaluate.py
+→Retriever自动评测
 ```
 
-每个 Chunk 使用 Embedding 模型转换为向量。
+## 安装与运行
 
-用户问题同样转换为向量，然后计算问题向量与各 Chunk 向量之间的相似度，并返回相似度最高的 Top-K 个 Chunk。
+### 1.创建虚拟环境
 
-当前使用：
-
-```python
-top_k = 3
+```bash
+python -m venv .venv
 ```
 
-同时使用相似度阈值过滤明显不相关的结果。
+Windows PowerShell：
 
+```bash
+.\.venv\Scripts\Activate.ps1
+```
+
+### 2.安装依赖
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3.配置API Key
+
+复制：
+
+```text
+.env.example
+```
+
+并创建：
+
+```text
+.env
+```
+
+填写：
+
+```text
+DEEPSEEK_API_KEY=your_api_key_here
+```
+
+### 4.运行RAG
+
+```bash
+python main.py
+```
+
+程序初始化完成后可以连续提问：
+
+```text
+请输入你的问题：Cache利用了什么原理？
+
+===== RAG最终回答 =====
+Cache利用的是程序访问的局部性原理，包括时间局部性和空间局部性。
+
+参考来源：
+第2页
+```
+
+输入：
+
+```text
+exit
+```
+
+即可退出。
+
+## Embedding模型加载策略
+
+项目首先尝试从本地加载Embedding模型：
+
+```text
+本地存在模型
+↓
+直接加载
+↓
+避免Hugging Face网络访问
+```
+
+如果新环境中没有对应模型：
+
+```text
+本地未找到模型
+↓
+自动连接Hugging Face Hub
+↓
+下载模型
+↓
+保存到本地缓存
+```
+
+这样既可以避免已有模型时不必要的网络访问，又保证项目在新环境中能够运行。
+
+## 性能实验
+
+初始版本中，Retriever初始化曾需要约11～13s，并且受到Hugging Face网络访问影响，极端情况下甚至达到数十秒。
+
+通过分析发现，主要波动来自Embedding模型加载时的网络访问。
+
+改为本地优先加载后，连续3次测试结果为：
+
+| 测试 | Embedding模型加载 | Retriever初始化 | 系统启动 |
+| ---: | ---: | ---: | ---: |
+| 1 | 0.1312s | 0.1321s | 0.1602s |
+| 2 | 0.1330s | 0.1341s | 0.1596s |
+| 3 | 0.1324s | 0.1333s | 0.1591s |
+
+说明在模型和文档向量均已缓存的情况下，系统启动时间可以稳定在约0.16s。
+
+在连续问答实验中，语义检索通常只需要约0.006～0.009s，单次问答主要耗时来自LLM调用。
+
+## Retriever自动评测
+
+目前建立了包含15个问题的小型人工标注测试集，覆盖：
+
+- Cache
+- RISC-V
+- 虚拟内存与TLB
+- 指令流水线
+- 哈夫曼编码
+
+在当前`Chunk Size=200`、`Overlap=50`配置下：
+
+```text
+Top-1命中率：15/15（100%）
+Top-3命中率：15/15（100%）
+```
+
+当前测试集规模仍然较小，因此该结果主要用于验证Retriever基本能力，并不能代表系统在大型知识库中的实际性能。
+
+## Chunk Size实验
+
+固定`Overlap=50`，分别测试不同Chunk Size：
+
+| Chunk Size | Chunk数量 | Top-1 | Top-3 | 平均检索时间 |
+| ---: | ---: | ---: | ---: | ---: |
+| 100 | 24 | 100.0% | 100.0% | 0.005903s |
+| 200 | 11 | 100.0% | 100.0% | 0.005633s |
+| 300 | 6 | 93.3% | 100.0% | 0.005957s |
+
+当`Chunk Size=300`时出现一次Top-1未命中，但正确结果仍位于Top-3中。
+
+初步说明：
+
+- Chunk过大可能混入更多语义，影响具体问题的Top-1排序。
+- Chunk过小会产生更多向量，增加索引规模。
+- Top-K检索能够一定程度上缓解Top-1排序不稳定的问题。
+
+因此当前暂时采用：
+
+```text
+Chunk Size=200
+Overlap=50
+Top-K=3
+```
+
+详细实验过程见`experiments.md`。
 
 ## 当前存在的问题
 
-目前版本仍然比较基础，存在以下问题：
+目前仍存在以下局限：
 
-* 相似度阈值仍然依赖人工设置
-* 相邻 Chunk 存在 Overlap，Top-K 中可能出现内容重复
-* Chunk Size 和 Overlap 尚未经过系统调参
-* 每次启动程序都需要加载 Embedding 模型，存在一定启动延迟
-* 当前主要针对单个 PDF 进行测试
-* PDF 中的封面、目录等非正文内容可能干扰检索，需要进行数据清洗
-* 当前代码主要集中在 `main.py`，尚未进行完整模块化
+- 测试知识库规模较小
+- 自动评测集目前只有15个问题
+- Threshold仍然是人工设定的固定值
+- 相邻Chunk可能因为Overlap产生重复内容
+- 当前仅支持固定PDF文件
+- 尚未加入图形化交互界面
+- 尚未测试大规模向量检索性能
 
 ## 后续计划
 
-接下来计划逐步完成：
-
-* [ ] 将 PDF Loader、Chunker、Retriever 和 LLM 调用拆分为独立模块
-* [ ] 完善来源页码引用
-* [ ] 增加运行时间统计
-* [ ] 对 Chunk Size、Overlap 和 Top-K 进行更系统的实验
-* [ ] 改进固定相似度阈值策略
-* [ ] 减少 Top-K 中重复 Chunk
-* [ ] 增加多个测试问题构成简单评测集
-* [ ] 完善实验结果与 README
-* [ ] 增加简单的 Web 交互界面
+- [ ] 增加Streamlit Web界面
+- [ ] 支持网页上传PDF
+- [ ] 完善回答来源展示
+- [ ] 扩大Retriever测试集
+- [ ] 在更大的PDF知识库上进行测试
+- [ ] 进一步研究Threshold和Top-K参数
+- [ ] 研究重复Chunk去除策略
+- [ ] 完善README截图和项目架构图
 
 ## 项目目的
 
-该项目目前主要用于学习 RAG 系统的基本工作原理，而不是构建完整的生产级知识库系统。
+本项目的主要目标不是构建生产级RAG平台，而是通过从基础组件开始实现一个完整RAG流程，理解以下问题：
 
-希望通过从基础组件开始实现的方式，理解以下问题：
+- Embedding如何实现语义检索？
+- Chunk Size为什么会影响检索结果？
+- Top-K有什么作用？
+- 固定Threshold存在哪些局限？
+- PDF解析质量如何影响RAG？
+- Retriever错误如何影响最终回答？
+- RAG系统真正的性能瓶颈在哪里？
+- 如何通过缓存减少重复计算和网络访问？
 
-* Embedding 如何支持语义检索？
-* Chunk Size 为什么会影响检索效果？
-* Top-K 应该如何选择？
-* 固定相似度阈值有什么局限？
-* PDF 文档质量如何影响 RAG？
-* Retriever 的结果如何影响最终 LLM 回答？
-
-后续将在当前基础上继续进行工程化整理和检索策略实验。
-
+后续将在当前基础上继续完善工程结构、自动评测和交互界面。

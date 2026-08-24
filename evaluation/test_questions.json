@@ -4,19 +4,63 @@
         "expected_page": 2
     },
     {
-        "question": "RISC-V为什么适合教学？",
+        "question": "为什么高速缓存能够减少CPU等待主存的时间？",
+        "expected_page": 2
+    },
+    {
+        "question": "程序刚访问过的数据为什么可能很快再次被访问？",
+        "expected_page": 2
+    },
+
+    {
+        "question": "RISC-V有什么特点？",
         "expected_page": 3
     },
+    {
+        "question": "为什么RISC-V适合用于计算机体系结构教学？",
+        "expected_page": 3
+    },
+    {
+        "question": "哪种指令集架构采用开放和模块化的设计？",
+        "expected_page": 3
+    },
+
     {
         "question": "TLB有什么作用？",
         "expected_page": 4
     },
     {
+        "question": "虚拟地址是怎样转换成物理地址的？",
+        "expected_page": 4
+    },
+    {
+        "question": "为什么处理器需要缓存最近使用的地址转换结果？",
+        "expected_page": 4
+    },
+
+    {
         "question": "流水线提高的是延迟还是吞吐率？",
         "expected_page": 5
     },
     {
+        "question": "五级流水线通常包含哪些阶段？",
+        "expected_page": 5
+    },
+    {
+        "question": "为什么流水线能让单位时间内完成更多指令？",
+        "expected_page": 5
+    },
+
+    {
         "question": "哈夫曼编码为什么能够无歧义解码？",
+        "expected_page": 6
+    },
+    {
+        "question": "为什么出现频率高的符号通常使用更短的编码？",
+        "expected_page": 6
+    },
+    {
+        "question": "什么是前缀编码，它为什么有利于解码？",
         "expected_page": 6
     }
 ]

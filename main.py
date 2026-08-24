@@ -6,6 +6,14 @@ from retriever import Retriever
 from llm import generate_answer
 from prompt import build_prompt
 
+from config import (
+    PDF_PATH,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+    EMBEDDING_MODEL,
+    TOP_K,
+    SIMILARITY_THRESHOLD
+)
 
 startup_start = time.perf_counter()
 
@@ -13,7 +21,7 @@ startup_start = time.perf_counter()
 start = time.perf_counter()
 
 pages = load_pdf(
-    "data/knowledge.pdf",
+    PDF_PATH,
     skip_pages=[1]
 )
 
@@ -24,8 +32,8 @@ start = time.perf_counter()
 
 chunks = split_pages(
     pages,
-    chunk_size=200,
-    overlap=50
+    chunk_size=CHUNK_SIZE,
+    overlap=CHUNK_OVERLAP
 )
 
 chunk_time = time.perf_counter() - start

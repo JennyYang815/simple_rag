@@ -1,0 +1,9 @@
+PDF_PATH = "data/knowledge.pdf"
+
+CHUNK_SIZE = 200
+CHUNK_OVERLAP = 50
+
+EMBEDDING_MODEL = "BAAI/bge-small-zh-v1.5"
+
+TOP_K = 3
+SIMILARITY_THRESHOLD = 0.54

@@ -46,8 +46,9 @@ start = time.perf_counter()
 
 retriever = Retriever(
     chunks,
-    top_k=3,
-    threshold=0.54
+    model_name=EMBEDDING_MODEL,
+    top_k=TOP_K,
+    threshold=SIMILARITY_THRESHOLD
 )
 retriever_init_time = time.perf_counter() - start
 

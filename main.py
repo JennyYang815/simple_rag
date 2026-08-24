@@ -110,6 +110,15 @@ while True:
         print("\n===== RAG 最终回答 =====")
         print(answer)
         
+        source_pages = sorted(set(
+            result["page"] for result in results
+        ))
+
+        print("\n参考来源：")
+        print("、".join(
+            f"第 {page} 页" for page in source_pages
+        ))
+        
         query_time = time.perf_counter() - query_start
 
         # 性能统计

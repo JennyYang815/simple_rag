@@ -3,3 +3,4 @@ sentence-transformers
 numpy
 openai
 python-dotenv
+streamlit

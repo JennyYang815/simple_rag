@@ -1,10 +1,15 @@
 import streamlit as st
 
+import hashlib
+import io
+
 from loader import load_pdf
 from chunker import split_pages
 from retriever import Retriever
 from prompt import build_prompt
 from llm import generate_answer
+
+from pypdf import PdfReader
 
 from config import (
     PDF_PATH,
@@ -23,46 +28,105 @@ st.set_page_config(
 
 st.title("Simple RAG")
 
-st.write(
-    "一个基于PDF文档的简单RAG问答系统"
-)
+st.write("一个基于PDF文档的简单RAG问答系统")
 
 
-@st.cache_resource
-def initialize_rag():
+@st.cache_resource(show_spinner=False)
+def initialize_rag(file_bytes, skip_pages):
+    pdf_file = io.BytesIO(file_bytes)
+
     pages = load_pdf(
-        PDF_PATH,
-        skip_pages=[1]
-    )
+        pdf_file,
+        skip_pages=list(skip_pages)
+        )
 
     chunks = split_pages(
         pages,
         chunk_size=CHUNK_SIZE,
         overlap=CHUNK_OVERLAP
     )
+    
+    file_hash = hashlib.sha256(
+        file_bytes
+    ).hexdigest()[:16]
+    
+    skip_key = "-".join(
+        str(page) for page in skip_pages
+    )
+
+    if not skip_key:
+        skip_key = "none"
 
     retriever = Retriever(
         chunks,
         model_name=EMBEDDING_MODEL,
         top_k=TOP_K,
-        threshold=SIMILARITY_THRESHOLD
+        threshold=SIMILARITY_THRESHOLD,
+        cache_dir=f"cache/uploads/{file_hash}/{skip_key}"
     )
 
-    return retriever
+    return retriever, pages, chunks
 
 
-with st.spinner("正在初始化RAG系统..."):
-    retriever = initialize_rag()
+uploaded_file = st.file_uploader(
+    "上传PDF文档",
+    type=["pdf"]
+)
 
 
-st.success("RAG系统初始化完成")
+if uploaded_file is None:
+    st.info("请先上传一个PDF文档。")
+    st.stop()
 
+
+file_bytes = uploaded_file.getvalue()
+
+pdf_reader = PdfReader(
+    io.BytesIO(file_bytes)
+)
+
+total_pages = len(pdf_reader.pages)
+
+st.write(
+    f"PDF共{total_pages}页"
+)
+
+skip_pages = st.multiselect(
+    "选择需要跳过的页面：",
+    options=list(
+        range(1, total_pages + 1)
+    ),
+    format_func=lambda page: f"第{page}页"
+)
+
+with st.spinner("正在解析PDF并建立知识库..."):
+    try:
+        retriever, pages, chunks = initialize_rag(
+            file_bytes,
+            tuple(skip_pages)
+        )
+
+    except Exception as error:
+        st.error(
+            f"PDF处理失败：{error}"
+        )
+        st.stop()
+
+
+st.success("PDF知识库建立完成")
+
+st.write(
+    f"文件：{uploaded_file.name}"
+)
+
+st.write(
+    f"实际读取{len(pages)}页，生成{len(chunks)}个Chunk"
+)
 
 question = st.text_input(
     "请输入你的问题：",
-    placeholder="例如：Cache利用了什么原理？"
+    placeholder="请输入与当前PDF相关的问题"
 )
-
 
 if st.button("提问", type="primary"):
 

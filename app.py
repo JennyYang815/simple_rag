@@ -30,9 +30,54 @@ st.title("Simple RAG")
 
 st.write("一个基于PDF文档的简单RAG问答系统")
 
+# 侧边栏
+st.sidebar.header("RAG参数")
+
+chunk_size = st.sidebar.slider(
+    "Chunk Size",
+    min_value=50,
+    max_value=500,
+    value=200,
+    step=50
+)
+
+overlap = st.sidebar.slider(
+    "Overlap",
+    min_value=0,
+    max_value=100,
+    value=50,
+    step=10
+)
+
+top_k = st.sidebar.slider(
+    "Top-K",
+    min_value=1,
+    max_value=5,
+    value=3
+)
+
+threshold = st.sidebar.slider(
+    "相似度阈值",
+    min_value=0.0,
+    max_value=1.0,
+    value=0.54,
+    step=0.01
+)
+
+if overlap >= chunk_size:
+    st.error("Overlap必须小于Chunk Size。")
+    st.stop()
+    
 
 @st.cache_resource(show_spinner=False)
-def initialize_rag(file_bytes, skip_pages):
+def initialize_rag(
+    file_bytes,
+    skip_pages,
+    chunk_size,
+    overlap,
+    top_k,
+    threshold
+):
     pdf_file = io.BytesIO(file_bytes)
 
     pages = load_pdf(
@@ -42,8 +87,8 @@ def initialize_rag(file_bytes, skip_pages):
 
     chunks = split_pages(
         pages,
-        chunk_size=CHUNK_SIZE,
-        overlap=CHUNK_OVERLAP
+        chunk_size=chunk_size,
+        overlap=overlap
     )
     
     file_hash = hashlib.sha256(
@@ -56,13 +101,19 @@ def initialize_rag(file_bytes, skip_pages):
 
     if not skip_key:
         skip_key = "none"
+        
+    cache_dir = (
+        f"cache/uploads/{file_hash}/{skip_key}"
+        f"chunk_{chunk_size}_"
+        f"overlap_{overlap}"
+    )
 
     retriever = Retriever(
         chunks,
         model_name=EMBEDDING_MODEL,
-        top_k=TOP_K,
-        threshold=SIMILARITY_THRESHOLD,
-        cache_dir=f"cache/uploads/{file_hash}/{skip_key}"
+        top_k=top_k,
+        threshold=threshold,
+        cache_dir=cache_dir
     )
 
     return retriever, pages, chunks
@@ -103,7 +154,11 @@ with st.spinner("正在解析PDF并建立知识库..."):
     try:
         retriever, pages, chunks = initialize_rag(
             file_bytes,
-            tuple(skip_pages)
+            tuple(skip_pages),
+            chunk_size,
+            overlap,
+            top_k,
+            threshold
         )
 
     except Exception as error:
@@ -121,6 +176,13 @@ st.write(
 
 st.write(
     f"实际读取{len(pages)}页，生成{len(chunks)}个Chunk"
+)
+
+st.caption(
+    f"Chunk Size={chunk_size} | "
+    f"Overlap={overlap} | "
+    f"Top-K={top_k} | "
+    f"Threshold={threshold:.2f}"
 )
 
 question = st.text_input(
